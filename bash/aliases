@@ -8,4 +8,13 @@ function railsapp {
 
 # misc
 alias reload='. ~/.bash_profile'
-alias vi=vim
+
+# Try for 'vim', on some linux distros its vi, elsewhere its vim
+which vim > /dev/null 2>&1
+if [ $? -eq 0 ] ; then
+  alias vi=vim
+  export EDITOR=vim
+else
+  unalias vi > /dev/null 2>&1
+  export EDITOR=vi
+fi
