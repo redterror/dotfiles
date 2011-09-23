@@ -1,0 +1,40 @@
+# This uses green/red colors to denote if our git workspace is clean or dirty.
+function parse_git_dirty {
+  if [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]]
+        then
+                echo "\e[0;31m"
+        else
+                echo "\e[0;32m"
+  fi
+}
+
+function variable_width_prompt {
+  shopt -s checkwinsize
+  local targetpct="30"
+  local columns=${COLUMNS:-80}
+  local currentdir="${PWD/#$HOME/~}"
+  local currentlength="${#currentdir}"
+  local targetlength="$((columns*targetpct/100))"
+  local firstpart="$((targetlength/3-3))"
+  local lastpart="$((currentlength-(targetlength*2/3)))"
+  if [ "$currentlength" -le "$targetlength" ]; then
+    newPWD="$currentdir"
+  else
+    if [ "$firstpart" -gt "1" ]; then
+      newPWD="${currentdir:0:$firstpart}...${currentdir:$lastpart}"
+    else
+      newPWD="${currentdir:0:2}...${currentdir:$lastpart}"
+    fi
+  fi
+  echo -n
+}
+
+PROMPT_COMMAND=variable_width_prompt export PROMPT_COMMAND
+
+export PS1='\[\e[35;40m\]\u\[\e[37;40m\]@\[\e[35;40m\]\h\[\e[37;40m\]:\[\e[36;40m\]$newPWD\[\e[37;40m\]$(__git_ps1 "(\[$(parse_git_dirty)\]%s\[\e[37;40m\])")\$ '
+
+which rvm > /dev/null 2>&1
+if [ $? -eq 0 ] ; then
+  PS1="\[\e[31;40m\]\$(/usr/local/bin/rvm-prompt i v g s)\[\e[37;40m\] $PS1"
+  export PS1
+fi
