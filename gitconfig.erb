@@ -3,6 +3,7 @@
 	email = <%= print("Your Email: "); STDOUT.flush; STDIN.gets.chomp %>
 [alias]
 	co = checkout
+  tagcommit = !sh -c 'git rev-list -1 $0'
 [color]
 	diff = auto
 	status = auto
