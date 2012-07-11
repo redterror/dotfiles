@@ -19,7 +19,7 @@ set incsearch
 set hlsearch
 
 " Shows EOL markers (and more?)
-set list
+"set list
 
 set history=50          " keep 50 lines of command line history
 "set ruler              " show the cursor position all the time
