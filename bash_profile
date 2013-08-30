@@ -4,6 +4,10 @@ if [ $? -eq 0 ] ; then
   env | grep SSH_AUTH_SOCK | sed 's,$,; export SSH_AUTH_SOCK,' > ~/.sock_info
 fi
 
+# Setup our X11 forwarding variables
+env | egrep '(DISPLAY|XDG_SESSION_COOKIE)' > ~/.x11-env
+echo "export DISPLAY XDG_SESSION_COOKIE" >> ~/.x11-env
+
 if [ -f ~/.bashrc ]; then
   source ~/.bashrc
 fi
