@@ -1,3 +1,4 @@
 escape n
 defscrollback 2000
 shell -$SHELL
+defutf8 on
