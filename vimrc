@@ -33,6 +33,10 @@ set comments=s1:/*,mb:*,ex:*/,f://,b:#,:%,:XCOMM,n:>,fb:-
 " This being the 21st century, I use Unicode
 set encoding=utf-8
 
+" Store swap files in fixed location, not current directory.
+" http://stackoverflow.com/a/4331812/845546
+set dir=~/.vimswap//,/var/tmp//,/tmp//,.
+
 " Always display the status line
 "set laststatus=2
 
