@@ -1,7 +1,12 @@
+# Rebuilds the ssh auth socket info file
+rebuild_sockinfo () {
+  env | grep SSH_AUTH_SOCK | sed 's,$,; export SSH_AUTH_SOCK,' > ~/.sock_info
+}
+
 # Setup the auth sock, for later user
 ssh-add -l > /dev/null 2>&1
 if [ $? -eq 0 ] ; then
-  env | grep SSH_AUTH_SOCK | sed 's,$,; export SSH_AUTH_SOCK,' > ~/.sock_info
+  rebuild_sockinfo()
 fi
 
 # Setup our X11 forwarding variables
