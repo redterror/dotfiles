@@ -11,6 +11,9 @@ set softtabstop=2
 set expandtab
 set smarttab
 
+" Makefiles require tabs...
+autocmd FileType make setlocal noexpandtab
+
 set ai
 let g:rubycomplete_rails = 1
 set background=dark
