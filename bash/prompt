@@ -10,9 +10,9 @@ function parse_git_dirty {
 
 function variable_width_prompt {
   shopt -s checkwinsize
-  local targetpct="30"
+  local targetpct="20"
   local columns=${COLUMNS:-80}
-  local currentdir="${PWD/#$HOME/~}"
+  local currentdir="${PWD/#$HOME/\~}"
   local currentlength="${#currentdir}"
   local targetlength="$((columns*targetpct/100))"
   local firstpart="$((targetlength/3-3))"
