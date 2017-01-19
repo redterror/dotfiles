@@ -47,6 +47,10 @@ set dir=~/.vimswap//,/var/tmp//,/tmp//,.
 " Display extra whitespace
 " set list listchars=tab:»·,trail:·
 
+" .cfndsl is a ruby file
+" http://beerpla.net/2008/04/02/how-to-add-a-vim-file-extension-to-syntax-highlighting/
+au BufNewFile,BufRead *.cfndsl set filetype=ruby
+
 " Local config
 if filereadable(".vimrc.local")
   source .vimrc.local
