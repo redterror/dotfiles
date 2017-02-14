@@ -1,6 +1,6 @@
 # This uses green/red colors to denote if our git workspace is clean or dirty.
 function parse_git_dirty {
-  if [[ $(git status --long 2> /dev/null | tail -n1 | egrep 'nothing to commit.+working directory clean') = "" ]] ; then
+  if [[ $(git status --long 2> /dev/null | tail -n1 | egrep 'nothing to commit.+ clean') = "" ]] ; then
     echo "\e[0;31m"
   else
     echo "\e[0;32m"
