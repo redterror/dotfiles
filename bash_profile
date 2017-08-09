@@ -15,7 +15,7 @@ echo "export DISPLAY XDG_SESSION_COOKIE" >> ~/.x11-env
 
 # AWS MFA / Temp credential helpers
 clear_sts_creds () {
-  unset aws_access_key_id aws_secret_access_key aws_session_token AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 refresh_sts_creds () {
@@ -28,16 +28,14 @@ refresh_sts_creds () {
   echo -n "MFA Code: "
   read MFA_TOKEN
 
-  CREDS=$(aws sts get-session-token --duration-seconds 3600 --serial-number $MFA_SERIAL --token-code $MFA_TOKEN)
+  CREDS=$(aws sts get-session-token --duration-seconds ${MFA_TTL:-3600} --serial-number $MFA_SERIAL --token-code $MFA_TOKEN \
+            --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
 
   unset MFA_TOKEN
   if [ $? -eq 0 ] ; then
-    AWS_ACCESS_KEY_ID=$(echo "$CREDS" | jq -r .Credentials.AccessKeyId)
-    AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | jq -r .Credentials.SecretAccessKey)
-    AWS_SESSION_TOKEN=$(echo "$CREDS" | jq -r .Credentials.SessionToken)
-    aws_access_key_id=$AWS_ACCESS_KEY_ID
-    aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
-    aws_session_token=$AWS_SESSION_TOKEN
+    AWS_ACCESS_KEY_ID=$(echo "$CREDS" | awk '{print $1}')
+    AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | awk '{print $2}')
+    AWS_SESSION_TOKEN=$(echo "$CREDS" | awk '{print $3}')
     export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
   fi
   unset CREDS
