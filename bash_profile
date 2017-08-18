@@ -25,11 +25,17 @@ refresh_sts_creds () {
   fi
 
   clear_sts_creds # You can't use tokens to get tokens, so start clean
-  echo -n "MFA Code: "
-  read MFA_TOKEN
 
-  CREDS=$(aws sts get-session-token --duration-seconds ${MFA_TTL:-3600} --serial-number $MFA_SERIAL --token-code $MFA_TOKEN \
-            --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
+  if [ "$MFA_SERIAL" != "none" ] ; then
+    echo -n "MFA Code: "
+    read MFA_TOKEN
+
+    CREDS=$(aws sts get-session-token --duration-seconds ${MFA_TTL:-3600} --serial-number $MFA_SERIAL --token-code $MFA_TOKEN \
+              --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
+  else
+    CREDS=$(aws sts get-session-token --duration-seconds ${MFA_TTL:-3600} \
+              --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
+  fi
 
   unset MFA_TOKEN
   if [ $? -eq 0 ] ; then
