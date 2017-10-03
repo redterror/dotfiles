@@ -28,7 +28,8 @@ refresh_sts_creds () {
 
   if [ "$MFA_SERIAL" != "none" ] ; then
     echo -n "MFA Code: "
-    read MFA_TOKEN
+    read -s MFA_TOKEN
+    echo
 
     CREDS=$(aws sts get-session-token --duration-seconds ${MFA_TTL:-3600} --serial-number $MFA_SERIAL --token-code $MFA_TOKEN \
               --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
@@ -46,6 +47,7 @@ refresh_sts_creds () {
   fi
   unset CREDS
 
+  echo "Token refreshed."
   return 0
 }
 
