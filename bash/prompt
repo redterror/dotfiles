@@ -7,11 +7,21 @@ function parse_git_dirty {
   fi
 }
 
+function bash_major_minor {
+  bash --version | head -1 | perl -pe 's/^GNU bash, version (\d+\.\d+)\..+/\1/'
+}
+
 function variable_width_prompt {
   shopt -s checkwinsize
   local targetpct="20"
   local columns=${COLUMNS:-80}
+
+  # 4.3 requires the escape but 4.2 doesn't, not sure why.
   local currentdir="${PWD/#$HOME/\~}"
+  if [ `bash_major_minor` = "4.2" ] ; then
+    local currentdir="${PWD/#$HOME/~}"
+  fi
+
   local currentlength="${#currentdir}"
   local targetlength="$((columns*targetpct/100))"
   local firstpart="$((targetlength/3-3))"
