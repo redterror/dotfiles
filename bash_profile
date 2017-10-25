@@ -38,16 +38,15 @@ refresh_sts_creds () {
               --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
   fi
 
-  unset MFA_TOKEN
   if [ $? -eq 0 ] ; then
     AWS_ACCESS_KEY_ID=$(echo "$CREDS" | awk '{print $1}')
     AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | awk '{print $2}')
     AWS_SESSION_TOKEN=$(echo "$CREDS" | awk '{print $3}')
     export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+    echo "Token refreshed."
   fi
-  unset CREDS
+  unset MFA_TOKEN CREDS
 
-  echo "Token refreshed."
   return 0
 }
 
