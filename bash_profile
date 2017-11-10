@@ -50,6 +50,21 @@ refresh_sts_creds () {
   return 0
 }
 
+# Adapted from http://blog.ryanparman.com/2014/01/29/easily-ssh-into-amazon-ec2-instances-using-the-name-tag/
+function hostname_from_instance() {
+  name=$1 ; shift
+  echo $(aws ec2 describe-instances --filters "{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}" --query='Reservations[0].Instances[0].PublicDnsName' $@ | head -1 | tr -d '"')
+}
+
+function ip_from_instance() {
+  name=$1 ; shift
+  echo $(aws ec2 describe-instances --filters "{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}" --query='Reservations[0].Instances[0].PublicIpAddress' $@ | head -1 | tr -d '"')
+}
+
+function ssh-aws() {
+  ssh $(ip_from_instance $@)
+}
+
 if [ -f ~/.bashrc ]; then
   source ~/.bashrc
 fi
