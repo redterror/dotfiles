@@ -16,6 +16,7 @@ echo "export DISPLAY XDG_SESSION_COOKIE" >> ~/.x11-env
 # AWS MFA / Temp credential helpers
 clear_sts_creds () {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  unset aws_access_key_id aws_secret_access_key aws_session_token
 }
 
 refresh_sts_creds () {
@@ -46,6 +47,44 @@ refresh_sts_creds () {
     echo "Token refreshed."
   fi
   unset MFA_TOKEN CREDS
+
+  return 0
+}
+
+assume_role_mfa () {
+  PROFILE_NAME=$1
+  if [ "$PROFILE_NAME" = "" ] ; then
+    echo "Usage: assume_role_mfa profile-name"
+    return 2
+  fi
+  if [ "$MFA_SERIAL" = "" ] ; then
+    echo "MFA_SERIAL not set"
+    return 2
+  fi
+
+  if [ "$MFA_SERIAL" != "none" ] ; then
+    echo -n "MFA Code: "
+    read -s MFA_TOKEN
+    echo
+	fi
+
+  clear_sts_creds
+  role_arn=$(grep -A 1 "profile $PROFILE_NAME" < ~/.aws/config | grep role_arn | awk '{print $3}')
+  role_session="cli-assume-role-mfa"
+  ext_id=`whoami`@`hostname`
+  CREDS=$(aws sts assume-role --role-arn $role_arn --role-session-name $role_session \
+            --duration-seconds ${MFA_ROLE_TTL:-3600} \
+            --serial-number $MFA_SERIAL --token-code $MFA_TOKEN --external-id "$ext_id" \
+            --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
+
+  if [ $? -eq 0 ] ; then
+    AWS_ACCESS_KEY_ID=$(echo "$CREDS" | awk '{print $1}')
+    AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | awk '{print $2}')
+    AWS_SESSION_TOKEN=$(echo "$CREDS" | awk '{print $3}')
+    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+    echo "Token refreshed for profile ${PROFILE_NAME}."
+  fi
+  unset MFA_TOKEN CREDS PROFILE_NAME
 
   return 0
 }
