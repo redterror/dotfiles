@@ -92,12 +92,12 @@ assume_role_mfa () {
 # Adapted from http://blog.ryanparman.com/2014/01/29/easily-ssh-into-amazon-ec2-instances-using-the-name-tag/
 function hostname_from_instance() {
   name=$1 ; shift
-  echo $(aws ec2 describe-instances --filters "{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}" --query='Reservations[].Instances[0].PublicDnsName' $@ | jq -r .[])
+  aws ec2 describe-instances --filters "{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}" --query='Reservations[].Instances[0].PublicDnsName' $@ | jq -r .[]
 }
 
 function ip_from_instance() {
   name=$1 ; shift
-  echo $(aws ec2 describe-instances --filters "{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}" --query='Reservations[].Instances[0].PublicIpAddress' $@ | jq -r .[])
+  aws ec2 describe-instances --filters "{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}" --query='Reservations[].Instances[0].PublicIpAddress' $@ | jq -r .[]
 }
 
 function ssh-aws() {
