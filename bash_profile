@@ -100,8 +100,17 @@ function ip_from_instance() {
   aws ec2 describe-instances --filters "[{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}, {\"Name\":\"instance-state-name\", \"Values\":[\"running\"]}]" --query='Reservations[].Instances[0].PublicIpAddress' $@ | jq -r .[]
 }
 
+function ip_from_instance_id() {
+  ids=$1 ; shift
+  aws ec2 describe-instances --instance-ids $ids --filters "[{\"Name\":\"instance-state-name\", \"Values\":[\"running\"]}]" --query='Reservations[].Instances[0].PublicIpAddress' $@ | jq -r .[]
+}
+
 function ssh-aws() {
   ssh $(ip_from_instance $@ | head -1)
+}
+
+function ssh-aws-id() {
+  ssh $(ip_from_instance_id $@ | head -1)
 }
 
 if [ -f ~/.bashrc ]; then
