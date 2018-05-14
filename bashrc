@@ -1,6 +1,7 @@
 source ~/.bash/aliases
 source ~/.bash/completions
 source ~/.bash/prompt
+source ~/.bash/aws_functions
 #source ~/.bash/paths
 #source ~/.bash/config
 
