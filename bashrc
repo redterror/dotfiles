@@ -29,6 +29,11 @@ if [ -f ~/.sock_info ]; then
   source ~/.sock_info
 fi
 
+# Python local stuff
+if [ -d "$HOME/.local/bin" ] ; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
 if [ -d "$HOME/.rbenv" ] ; then
   export PATH="$HOME/.rbenv/bin:$PATH"
   eval "$(rbenv init -)"
