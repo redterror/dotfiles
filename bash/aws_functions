@@ -103,3 +103,16 @@ function ssh-aws() {
 function ssh-aws-id() {
   ssh $(ip_from_instance_id $@ | head -1)
 }
+
+function retag-ecr-image() {
+  REPO=${1:?"No repository specified"}
+  SHA=${2:?"No image digest sha specified"}
+  TAG=${3:?"No new tag specified"}
+
+  # From: https://docs.aws.amazon.com/AmazonECR/latest/userguide/retag-aws-cli.html
+  MANIFEST=$(aws ecr batch-get-image --repository-name ${REPO} --image-ids imageDigest=${SHA} --query images[].imageManifest --output text)
+  if [ $? -eq 0 ] ; then
+    aws ecr put-image --repository-name ${REPO} --image-tag ${TAG} --image-manifest "$MANIFEST"
+    unset MANIFEST
+  fi
+}
