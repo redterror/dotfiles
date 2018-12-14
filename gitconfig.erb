@@ -6,6 +6,7 @@
   tagcommit = !sh -c 'git rev-list -1 $0'
   rrm = !git status | grep deleted | awk '{print $3}' | xargs git rm
   resurrect = "!sh -c 'git checkout $(git rev-list -n 1 HEAD -- \"$1\")^ -- \"$1\"' "
+  pf = push --force-with-lease
 [color]
 	diff = auto
 	status = auto
