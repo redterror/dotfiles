@@ -55,3 +55,6 @@ au BufNewFile,BufRead *.cfndsl set filetype=ruby
 if filereadable(".vimrc.local")
   source .vimrc.local
 endif
+
+" https://askubuntu.com/a/1044625
+set listchars=tab:→\ ,space:·,nbsp:␣,trail:•,eol:¶,precedes:«,extends:»
