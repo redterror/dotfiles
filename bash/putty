@@ -1,0 +1,6 @@
+# Sets the window title:
+# https://www.unix.com/shell-programming-and-scripting/175728-remotely-setting-putty-window-title.html
+# https://serverfault.com/a/599071
+putty_title () {
+  printf "\033]0; ${1}\007"
+}
