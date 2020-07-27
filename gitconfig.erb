@@ -7,6 +7,8 @@
   rrm = !git status | grep deleted | awk '{print $3}' | xargs git rm
   resurrect = "!sh -c 'git checkout $(git rev-list -n 1 HEAD -- \"$1\")^ -- \"$1\"' "
   pf = push --force-with-lease
+  # https://stackoverflow.com/questions/3161204/how-to-find-the-nearest-parent-of-a-git-branch
+  parent = "!git show-branch | grep '*' | grep -v \"$(git rev-parse --abbrev-ref HEAD)\" | head -n1 | sed 's/.*\\[\\(.*\\)\\].*/\\1/' | sed 's/[\\^~].*//' #"
 [color]
 	diff = auto
 	status = auto
