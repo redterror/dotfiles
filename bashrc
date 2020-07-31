@@ -4,6 +4,7 @@ source ~/.bash/prompt
 source ~/.bash/aws_functions
 source ~/.bash/python
 source ~/.bash/putty
+source ~/.bash/ssh
 #source ~/.bash/paths
 #source ~/.bash/config
 

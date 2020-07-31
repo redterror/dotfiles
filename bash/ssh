@@ -1,0 +1,4 @@
+fixup_auth_sock () {
+  SOCK_STR=$(env | grep SSH_AUTH_SOCK)
+  echo "$SOCK_STR ; export SSH_AUTH_SOCK" > ~/.sock_info
+}
