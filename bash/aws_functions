@@ -130,3 +130,12 @@ function retag-ecr-image() {
     unset MANIFEST
   fi
 }
+
+# Originally: https://www.reddit.com/r/aws/comments/9oy2iy/your_requested_instance_type_m5large_is_not/e7xrnck?utm_source=share&utm_medium=web2x&context=3
+function aws-instance-type-availability() {
+  TYPE=${1:?"No instance type specified"}
+  shift
+
+  aws ec2 describe-reserved-instances-offerings --filters 'Name=scope,Values=Availability Zone' --no-include-marketplace --instance-type $TYPE $@ \
+    | jq -r '.ReservedInstancesOfferings[].AvailabilityZone' | sort | uniq
+}
