@@ -58,3 +58,6 @@ endif
 
 " https://askubuntu.com/a/1044625
 set listchars=tab:→\ ,space:·,nbsp:␣,trail:•,eol:¶,precedes:«,extends:»
+
+" Don't indent comments in yaml files: https://stackoverflow.com/a/54175510/845546
+autocmd BufNewFile,BufReadPost * if &filetype == "yaml" | set expandtab shiftwidth=2 indentkeys-=0# | endif
