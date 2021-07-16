@@ -15,7 +15,7 @@ refresh_sts_creds () {
   if [ "$MFA_SERIAL" != "none" ] ; then
     if [ "$1" = "" ] ; then
       echo -n "MFA Code: "
-      read -s MFA_TOKEN
+      read -es MFA_TOKEN
       echo
     else
       MFA_TOKEN=$1
