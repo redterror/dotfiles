@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Connect to an EC2 instance running ec2-instance-connect via ssh.
+#
+
+set -eo pipefail
+
+usage () {
+  cat <<EOSTR
+ssh-ec2-connect [OPTIONS]
+  -e --instance-id=INSTANCE_ID    EC2 Instance ID
+  -i --private-key=path/to/key    SSH private key (optional)
+  -p --public-key=path/to/key     SSH public key (optional)
+  -r --region=us-tirefire-1       AWS Region
+  -u --user=ssh-user              SSH user
+
+If a private key is specified but a public key is omitted, the public key is expected
+to be in the same location as the private key but with a .pub extension.
+
+Omitting a private key assumes the user has a SSH agent operating.
+
+Environment variables can be set for default keys:
+\$SSH_EC2_CONNECT_PRIVATE_KEY
+\$SSH_EC2_CONNECT_PUBLIC_KEY
+EOSTR
+}
+
+verbose () {
+  if [ $VERBOSE -gt 0 ] ; then
+    echo $1
+  fi
+}
+
+INSTANCE_ID=""
+PRIVATE_KEY="${SSH_EC2_CONNECT_PRIVATE_KEY}"
+PUBLIC_KEY="${SSH_EC2_CONNECT_PUBLIC_KEY}"
+#SSH_OPTS="-o LogLevel=QUIET"
+SSH_OPTS="-v"
+SSH_USER="ec2-user"
+VERBOSE=0
+
+set -u
+
+OPTS=`getopt -o e:i:p:r:u:vh --long instance-id:,private-key:,public-key:,region:,user:,verbose,help -n 'ssh-ec2-connect' -- "$@"`
+eval set -- "$OPTS"
+
+while true ; do
+  case "$1" in
+    -e|--instance-id)
+      INSTANCE_ID=$2 ; shift 2 ;;
+    -i|--private-key)
+      PRIVATE_KEY=$2 ; shift 2 ;;
+    -p|--public-key)
+      PUBLIC_KEY=$2 ; shift 2 ;;
+    -r|--region)
+      export AWS_DEFAULT_REGION=$2 AWS_REGION=$2 ; shift 2 ;;
+    -u|--user)
+      SSH_USER=$2; shift 2 ;;
+    -v|--verbose)
+      set -x
+      VERBOSE=1 ; shift ;;
+    -h|--help)
+      usage ; exit ;;
+    --) shift ; break ;;
+    *) echo "Option parsing error" ; exit 1 ;;
+  esac
+done
+
+if [ "${INSTANCE_ID}" = "" ] ; then
+  echo "No instance id specified!"
+  exit 2
+fi
+
+if [ ! "${PRIVATE_KEY}" = "" ] ; then
+  SSH_OPTS="${SSH_OPTS} -i ${PRIVATE_KEY}"
+
+  if [ "${PUBLIC_KEY}" = "" ] ; then
+    PUBLIC_KEY="${PRIVATE_KEY}.pub"
+  fi
+
+  if [ ! -f $PRIVATE_KEY ] ; then
+    echo "SSH private key not found at ${PRIVATE_KEY}"
+    exit 2
+  fi
+
+  if [ ! -f ${PUBLIC_KEY} ] ; then
+    echo "SSH public key not found at ${PUBLIC_KEY}"
+    exit 2
+  fi
+fi
+
+verbose "Fetching metadata..."
+INSTANCE_META=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query='Reservations[].Instances[0]')
+AZ=$(echo $INSTANCE_META | jq -r .[].Placement.AvailabilityZone)
+REGION=$(echo ${AZ} | sed 's,.$,,')
+IP=$(echo $INSTANCE_META | jq -r  .[].PublicIpAddress)
+
+verbose "Sending public key ${PUBLIC_KEY}..."
+aws ec2-instance-connect send-ssh-public-key --region ${REGION} --instance-id ${INSTANCE_ID} --availability-zone ${AZ} --instance-os-user $SSH_USER --ssh-public-key file://${PUBLIC_KEY} > /dev/null
+
+verbose "Connecting..."
+exec ssh ${SSH_OPTS} ${SSH_USER}@${IP} "$@"
