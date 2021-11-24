@@ -14,6 +14,9 @@ ssh-ec2-connect [OPTIONS]
   -r --region=us-tirefire-1       AWS Region
   -u --user=ssh-user              SSH user
 
+N.B. The arguments above _must_ use an '=' for long options, due to portability
+issues with 'getopt'.
+
 If a private key is specified but a public key is omitted, the public key is expected
 to be in the same location as the private key but with a .pub extension.
 
@@ -41,30 +44,45 @@ VERBOSE=0
 
 set -u
 
-OPTS=`getopt -o e:i:p:r:u:vh --long instance-id:,private-key:,public-key:,region:,user:,verbose,help -n 'ssh-ec2-connect' -- "$@"`
-eval set -- "$OPTS"
+# See: https://stackoverflow.com/a/28466267/845546
+die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
+needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 
-while true ; do
-  case "$1" in
-    -e|--instance-id)
-      INSTANCE_ID=$2 ; shift 2 ;;
-    -i|--private-key)
-      PRIVATE_KEY=$2 ; shift 2 ;;
-    -p|--public-key)
-      PUBLIC_KEY=$2 ; shift 2 ;;
-    -r|--region)
-      export AWS_DEFAULT_REGION=$2 AWS_REGION=$2 ; shift 2 ;;
-    -u|--user)
-      SSH_USER=$2; shift 2 ;;
-    -v|--verbose)
+while getopts e:i:p:r:u:vh-: OPT; do
+  if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+    OPT="${OPTARG%%=*}"       # extract long option name
+    OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
+    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+  fi
+
+  case "$OPT" in
+    e | instance-id)
+      needs_arg
+      INSTANCE_ID=$OPTARG ;;
+    i | private-key)
+      needs_arg
+      PRIVATE_KEY=$OPTARG ;;
+    p | public-key)
+      needs_arg
+      PUBLIC_KEY=$OPTARG ;;
+    r | region)
+      needs_arg
+      export AWS_DEFAULT_REGION=$OPTARG AWS_REGION=$OPTARG ;;
+    u | user)
+      needs_arg
+      SSH_USER=$OPTARG ;;
+    v | verbose)
       set -x
-      VERBOSE=1 ; shift ;;
-    -h|--help)
+      VERBOSE=1 ;;
+    h | help)
       usage ; exit ;;
-    --) shift ; break ;;
-    *) echo "Option parsing error" ; exit 1 ;;
+    ??* )
+      die "Illegal option --$OPT" ;; # bad long option
+    ? )
+      exit 2 ;; # bad short option
   esac
 done
+shift $((OPTIND-1)) # remove parsed options and args from $@ list
 
 if [ "${INSTANCE_ID}" = "" ] ; then
   echo "No instance id specified!"
