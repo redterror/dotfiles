@@ -1,0 +1,129 @@
+#!/bin/bash
+
+set -eo pipefail
+BINDIR=$(dirname $0)
+SSH="${BINDIR}/ssh-ec2-connect"
+INSTALL_JQ_REMOTE_CMD="yum install jq -y"
+
+##
+# Use this annotated script a base for launching an interactive console task on Amazon ECS
+#
+# more info: https://engineering.loyaltylion.com/running-an-interactive-console-on-amazon-ecs-c692f321b14d
+#
+# Requirements:
+# - `jq` must be installed on both the client and server
+##
+
+# the ECS cluster in which we'll launch the console `default` or `staging`
+cluster="$1"
+
+# the name of the task definition to use when launching the console task
+taskDefinition="$2"
+
+cliContainerName="$3"
+
+# depending on your requirement, you may want to use an existing task definition and then use the
+# `containerOverrides`, or you might have a completely separate task definition that is designed
+# for running a console
+#
+# the override approach is reasonable, but note that you can't override most things; in particular
+# you can't add overrides for cpu/mem constraints. Using the same task definition as another app
+# may also make it harder to identify console tasks in ECS, although the `started-by` field does
+# help there
+#
+# whichever approach you use, because ECS does not support interactive tasks yet, you'll need to
+# start the container with a "dummy" sleep command; this will stop the container from exiting
+# immediately allowing you to docker exec a console in later
+
+overrides='{"containerOverrides": [{"name": "'${cliContainerName}'", "command": ["sleep", "86400"]}]}'
+
+echo '-> Starting task...'
+
+# run the new task using the ECS scheduler. By default, ECS will place the task on any instance
+# that has enough cpu/mem available. You can also specify placement constraints or a strategy here
+#
+# https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+#
+response=$(aws ecs run-task \
+  --cluster "$cluster" \
+  --task-definition "$taskDefinition" \
+  --overrides "$overrides" \
+  --started-by "user-console/$(whoami)")
+
+taskArn=$(echo "$response" | jq -r '.tasks [0] .taskArn')
+containerInstanceArn=$(echo "$response" | jq -r '.tasks [0] .containerInstanceArn')
+
+# once the task has been placed, translate the containerInstanceArn into an EC2 instance from which
+# we can find the public IP address so we can connect to the server
+#
+# note: in production, your ECS container instances are probably not exposed to the internet, so
+# you'll need to adapt things from here (e.g. require VPN access, or go through an SSH gateway)
+#
+# https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_DescribeContainerInstances.html
+# https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+#
+instanceId=$(aws ecs describe-container-instances \
+  --cluster "$cluster" \
+  --container-instances "$containerInstanceArn" \
+    | jq -r '.containerInstances [0] .ec2InstanceId')
+
+instance=$(aws ec2 describe-instances \
+  --instance-ids "$instanceId" \
+    | jq '.Reservations [0] .Instances [0]')
+
+instanceName=$(echo "$instance" | jq -r '.Tags[] | select(.Key == "Name") .Value')
+instanceIp=$(echo "$instance" | jq -r '.PublicIpAddress')
+instanceId=$(echo "$instance" | jq -r '.InstanceId')
+
+# once we have the address of the container instance we then need the Docker container id
+#
+# ECS container instances all have a handy introspection API on port 51678 which can be used to
+# translate a taskArn into a Docker container
+#
+# Even though the task have been placed by this point, it may take some time for the container to
+# actually start, so we'll loop this until we have a container id
+
+getDockerId() {
+  dockerId=$($SSH --instance-id=${instanceId} -- -qt \
+    "curl http://localhost:51678/v1/tasks?taskarn=$taskArn" \
+      | jq -r '.Containers [0] .DockerId')
+  #dockerId=$(ssh -qt "ec2-user@$instanceIp" \
+  #  "curl http://localhost:51678/v1/tasks?taskarn=$taskArn" \
+  #    | jq -r '.Containers [0] .DockerId')
+}
+
+echo "-> Waiting for container ${taskArn} to start on instance ${instanceId} (IP: ${instanceIp})..."
+
+getDockerId
+while [ "$dockerId" == 'null' ] || [ -z "$dockerId" ]; do
+  getDockerId
+  sleep 1
+done
+
+echo "-> Loading console on instance $instanceName / $instanceId / $instanceIp and attaching to task ${taskArn}..."
+
+# with the instance address and docker container, we now have all we need to launch into an
+# interactive console using `ssh -t`, which launches a pseudo-tty that lasts until we close the
+# session
+#
+# note: this example assumes an executable `./console` in the docker work dir; for Rails this would
+# probably be `bundle exec rails console`
+
+# Ensure jq is installed
+set +e
+$SSH --instance-id=${instanceId} -- -qt sudo ${INSTALL_JQ_REMOTE_CMD}
+set -e
+
+$SSH --instance-id=${instanceId} -- -qt docker exec -ti "$dockerId" /bin/bash
+sleep 0.5
+
+# after we close the tty we'll stop the task so it doesn't sit around wasting resources
+
+echo -n "-> Stopping task ${taskArn}..."
+
+response=$(aws ecs stop-task \
+  --cluster "$cluster" \
+  --task "$taskArn" \
+  --reason 'user-console/stop')
+
+echo -e '\r-> Stopping task... done'
