@@ -59,6 +59,18 @@ if [ "${taskArn}" = "null" ] ; then
   exit 1
 fi
 
+function stop_task () {
+  # after we close the tty we'll stop the task so it doesn't sit around wasting resources
+  echo "-> Stopping task ${taskArn}..."
+  response=$(aws ecs stop-task \
+    --cluster "$cluster" \
+    --task "$taskArn" \
+    --reason 'user-console/stop')
+
+  echo "-> Task stopped"
+}
+trap stop_task EXIT
+
 # once the task has been placed, translate the containerInstanceArn into an EC2 instance from which
 # we can find the public IP address so we can connect to the server
 #
@@ -121,15 +133,6 @@ set -e
 
 echo "-> Loading console and attaching to task..."
 $SSH --instance-id=${instanceId} -- -qt docker exec -ti "$dockerId" /bin/bash
+
+# Pause for a moment and then exit, triggering the cleanup trap above automatiocally
 sleep 0.5
-
-# after we close the tty we'll stop the task so it doesn't sit around wasting resources
-
-echo "-> Stopping task ${taskArn}..."
-
-response=$(aws ecs stop-task \
-  --cluster "$cluster" \
-  --task "$taskArn" \
-  --reason 'user-console/stop')
-
-echo "-> Task stopped"
