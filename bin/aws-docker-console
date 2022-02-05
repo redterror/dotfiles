@@ -53,6 +53,12 @@ response=$(aws ecs run-task \
 taskArn=$(echo "$response" | jq -r '.tasks [0] .taskArn')
 containerInstanceArn=$(echo "$response" | jq -r '.tasks [0] .containerInstanceArn')
 
+if [ "${taskArn}" = "null" ] ; then
+  echo "Unable to start task!"
+  echo ${response}
+  exit 1
+fi
+
 # once the task has been placed, translate the containerInstanceArn into an EC2 instance from which
 # we can find the public IP address so we can connect to the server
 #
