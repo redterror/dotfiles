@@ -9,7 +9,7 @@
   pf = push --force-with-lease
   # https://stackoverflow.com/questions/3161204/how-to-find-the-nearest-parent-of-a-git-branch
   parent = "!git show-branch | grep '*' | grep -v \"$(git rev-parse --abbrev-ref HEAD)\" | head -n1 | sed 's/.*\\[\\(.*\\)\\].*/\\1/' | sed 's/[\\^~].*//' #"
-  https://stackoverflow.com/a/35075021/845546
+  # https://stackoverflow.com/a/35075021/845546
   adog = log --all --decorate --oneline --graph
 [color]
 	diff = auto
