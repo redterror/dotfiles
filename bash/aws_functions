@@ -79,9 +79,7 @@ assume_role_mfa () {
 }
 
 echo_aws_creds () {
-  for i in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN ; do
-    echo "export $i=${!i}"
-  done
+  echo "export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
 }
 
 # Adapted from http://blog.ryanparman.com/2014/01/29/easily-ssh-into-amazon-ec2-instances-using-the-name-tag/
