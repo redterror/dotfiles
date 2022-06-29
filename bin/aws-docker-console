@@ -22,6 +22,9 @@ taskDefinition="$2"
 
 cliContainerName="$3"
 
+# The username to use for running the docker shell
+attachUser="${4:-root}"
+
 # depending on your requirement, you may want to use an existing task definition and then use the
 # `containerOverrides`, or you might have a completely separate task definition that is designed
 # for running a console
@@ -132,7 +135,7 @@ $SSH --instance-id=${instanceId} -- -qt sudo ${INSTALL_JQ_REMOTE_CMD}
 set -e
 
 echo "-> Loading console and attaching to task..."
-$SSH --instance-id=${instanceId} -- -qt docker exec -ti "$dockerId" /bin/bash
+$SSH --instance-id=${instanceId} -- -qt docker exec -ti -u ${attachUser} "$dockerId" /bin/bash
 
 # Pause for a moment and then exit, triggering the cleanup trap above automatiocally
 sleep 0.5
