@@ -5,6 +5,10 @@ BINDIR=$(dirname $0)
 SSH="${BINDIR}/ssh-ec2-connect"
 INSTALL_JQ_REMOTE_CMD="yum install jq -y"
 
+if [ "${USE_SSM}" != "" ] ; then
+  SSH="${SSH} --ssm"
+fi
+
 ##
 # Use this annotated script a base for launching an interactive console task on Amazon ECS
 #

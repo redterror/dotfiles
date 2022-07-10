@@ -12,6 +12,7 @@ ssh-ec2-connect [OPTIONS]
   -i --private-key=path/to/key    SSH private key (optional)
   -p --public-key=path/to/key     SSH public key (optional)
   -r --region=us-tirefire-1       AWS Region
+  -s --ssm                        Use AWS SSM for transport
   -u --user=ssh-user              SSH user
 
 N.B. The arguments above _must_ use an '=' for long options, due to portability
@@ -41,6 +42,7 @@ PUBLIC_KEY="${SSH_EC2_CONNECT_PUBLIC_KEY}"
 SSH_OPTS="-v"
 SSH_USER="ec2-user"
 VERBOSE=0
+SSM=0
 
 set -u
 
@@ -71,6 +73,8 @@ while getopts e:i:p:r:u:vh-: OPT; do
     u | user)
       needs_arg
       SSH_USER=$OPTARG ;;
+    s | ssm)
+      SSM=1 ;;
     v | verbose)
       set -x
       VERBOSE=1 ;;
@@ -111,7 +115,14 @@ verbose "Fetching metadata..."
 INSTANCE_META=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query='Reservations[].Instances[0]')
 AZ=$(echo $INSTANCE_META | jq -r .[].Placement.AvailabilityZone)
 REGION=$(echo ${AZ} | sed 's,.$,,')
-IP=$(echo $INSTANCE_META | jq -r  .[].PublicIpAddress)
+
+if [ "$SSM" -eq 0 ] ; then
+  IP=$(echo $INSTANCE_META | jq -r  .[].PublicIpAddress)
+else
+  # SSM assumes we can ssh to instance id's b/c of their config recommendation at:
+  # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started.html
+  IP=${INSTANCE_ID}
+fi
 
 verbose "Sending public key ${PUBLIC_KEY}..."
 aws ec2-instance-connect send-ssh-public-key --region ${REGION} --instance-id ${INSTANCE_ID} --availability-zone ${AZ} --instance-os-user $SSH_USER --ssh-public-key file://${PUBLIC_KEY} > /dev/null
