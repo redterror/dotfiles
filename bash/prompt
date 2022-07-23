@@ -38,7 +38,8 @@ function variable_width_prompt {
   echo -n
 }
 
-PROMPT_COMMAND=variable_width_prompt export PROMPT_COMMAND
+# Append our history on every command + set the variable_width
+PROMPT_COMMAND="history -a;variable_width_prompt" export PROMPT_COMMAND
 
 export PS1='\[\e[35;40m\]\u\[\e[37;40m\]@\[\e[35;40m\]\h\[\e[37;40m\]:\[\e[36;40m\]$newPWD\[\e[37;40m\]$(__git_ps1 "(\[$(parse_git_dirty)\]%s\[\e[37;40m\])")\$ '
 
