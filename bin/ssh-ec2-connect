@@ -8,8 +8,8 @@ set -eo pipefail
 usage () {
   cat <<EOSTR
 ssh-ec2-connect [OPTIONS]
-  -e --instance-id=INSTANCE_ID    EC2 Instance ID
-  -i --private-key=path/to/key    SSH private key (optional)
+  -i --instance-id=INSTANCE_ID    EC2 Instance ID
+  -k --private-key=path/to/key    SSH private key (optional)
   -p --public-key=path/to/key     SSH public key (optional)
   -r --region=us-tirefire-1       AWS Region
   -s --ssm                        Use AWS SSM for transport
@@ -26,6 +26,15 @@ Omitting a private key assumes the user has a SSH agent operating.
 Environment variables can be set for default keys:
 \$SSH_EC2_CONNECT_PRIVATE_KEY
 \$SSH_EC2_CONNECT_PUBLIC_KEY
+
+SSM Transport mode expects SSH to be able to handle EC2 instance ID's as hostnames,
+e.g. 'ssh i-1234567890'.  The SSM docs at:
+https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
+Suggest the following in your ~/.ssh/config:
+
+# SSH over Session Manager
+Host i-* mi-*
+    ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
 EOSTR
 }
 
@@ -50,7 +59,7 @@ set -u
 die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
 needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 
-while getopts e:i:p:r:su:vh-: OPT; do
+while getopts i:k:p:r:su:vh-: OPT; do
   if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
     OPT="${OPTARG%%=*}"       # extract long option name
     OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -58,10 +67,10 @@ while getopts e:i:p:r:su:vh-: OPT; do
   fi
 
   case "$OPT" in
-    e | instance-id)
+    i | instance-id)
       needs_arg
       INSTANCE_ID=$OPTARG ;;
-    i | private-key)
+    k | private-key)
       needs_arg
       PRIVATE_KEY=$OPTARG ;;
     p | public-key)
