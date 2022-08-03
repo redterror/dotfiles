@@ -39,7 +39,7 @@ INSTANCE_ID=""
 PRIVATE_KEY="${SSH_EC2_CONNECT_PRIVATE_KEY}"
 PUBLIC_KEY="${SSH_EC2_CONNECT_PUBLIC_KEY}"
 #SSH_OPTS="-o LogLevel=QUIET"
-SSH_OPTS="-v"
+SSH_OPTS=""
 SSH_USER="ec2-user"
 VERBOSE=0
 SSM=0
@@ -77,6 +77,7 @@ while getopts e:i:p:r:su:vh-: OPT; do
       SSM=1 ;;
     v | verbose)
       set -x
+      SSH_OPTS="${SSH_OPTS} -v"
       VERBOSE=1 ;;
     h | help)
       usage ; exit ;;
