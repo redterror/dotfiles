@@ -50,7 +50,7 @@ set -u
 die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
 needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 
-while getopts e:i:p:r:u:vh-: OPT; do
+while getopts e:i:p:r:su:vh-: OPT; do
   if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
     OPT="${OPTARG%%=*}"       # extract long option name
     OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
