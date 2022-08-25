@@ -67,6 +67,12 @@ if [ "${taskArn}" = "null" ] ; then
 fi
 
 function stop_task () {
+  ERR_CODE=$1
+
+  if [ $ERR_CODE -ne 0 ] ; then
+    echo "-> Error caught running '$BASH_COMMAND' code: $ERR_CODE"
+  fi
+
   # after we close the tty we'll stop the task so it doesn't sit around wasting resources
   echo "-> Stopping task ${taskArn}..."
   response=$(aws ecs stop-task \
@@ -76,7 +82,7 @@ function stop_task () {
 
   echo "-> Task stopped"
 }
-trap stop_task EXIT
+trap 'stop_task $?' EXIT
 
 # once the task has been placed, translate the containerInstanceArn into an EC2 instance from which
 # we can find the public IP address so we can connect to the server
