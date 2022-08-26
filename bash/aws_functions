@@ -88,6 +88,11 @@ function hostname_from_instance() {
   aws ec2 describe-instances --filters "[{\"Name\":\"tag:Name\", \"Values\":[\"$name\"]}, {\"Name\":\"instance-state-name\", \"Values\":[\"running\"]}]" --query='Reservations[].Instances[0].PublicDnsName' $@ | jq -r .[]
 }
 
+function instance_id_from_name() {
+  name=$1 ; shift
+  aws ec2 describe-instances --query 'Reservations[*].Instances[*].[Tags[?Key==`Name`] | [0].Value,InstanceId]' --output text | grep $name | awk '{print $2}'
+}
+
 function ip_from_instance() {
   name=$1 ; shift
   pub_or_private=${1:-"public"} ; shift
