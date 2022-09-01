@@ -121,6 +121,12 @@ function ssh-aws-id() {
   ssh $(ip_from_instance_id $@ | head -1)
 }
 
+function ssh-ssm() {
+  hostname=$1
+  shift
+  ssh $(instance_id_from_name ${hostname}) $@
+}
+
 function retag-ecr-image() {
   REPO=${1:?"No repository specified"}
   SHA=${2:?"No image digest sha specified"}
