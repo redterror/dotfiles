@@ -90,7 +90,7 @@ function hostname_from_instance() {
 
 function instance_id_from_name() {
   name=$1 ; shift
-  aws ec2 describe-instances --query 'Reservations[*].Instances[*].[Tags[?Key==`Name`] | [0].Value,InstanceId]' --output text | grep $name | awk '{print $2}'
+  aws ec2 describe-instances --query 'Reservations[*].Instances[*].[Tags[?Key==`Name`] | [0].Value,InstanceId]' --output text | grep -E "^${name}\s+" | awk '{print $2}'
 }
 
 function ip_from_instance() {
