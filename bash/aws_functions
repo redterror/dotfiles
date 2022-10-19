@@ -124,7 +124,10 @@ function ssh-aws-id() {
 function ssh-ssm() {
   hostname=$1
   shift
-  ssh $(instance_id_from_name ${hostname}) $@
+  instance_id=$(instance_id_from_name ${hostname})
+  if [ "$instance_id" != "" ] ; then
+    ssh $instance_id $@
+  fi
 }
 
 function retag-ecr-image() {
