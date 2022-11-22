@@ -57,7 +57,6 @@ assume_role_mfa () {
     echo
 	fi
 
-  clear_sts_creds
   role_arn=$(grep -A 1 "profile $PROFILE_NAME" < ~/.aws/config | grep role_arn | awk '{print $3}')
   role_session="cli-assume-role-mfa"
   ext_id=`whoami`@`hostname`
