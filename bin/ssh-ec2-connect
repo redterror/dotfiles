@@ -13,6 +13,8 @@ ssh-ec2-connect [OPTIONS]
   -p --public-key=path/to/key     SSH public key (optional)
   -r --region=us-tirefire-1       AWS Region
   -s --ssm                        Use AWS SSM for transport
+     --scp-local FILE             Local file for SCP operation
+     --scp-remote PATH            Remote path for SCP operation
   -u --user=ssh-user              SSH user
 
 N.B. The arguments above _must_ use an '=' for long options, due to portability
@@ -51,6 +53,8 @@ SSH_OPTS="${SSH_OPTS}"
 SSH_USER="ec2-user"
 VERBOSE=0
 SSM=0
+SCP_LOCAL=""
+SCP_REMOTE=""
 
 set -u
 
@@ -83,6 +87,12 @@ while getopts i:k:p:r:su:vh-: OPT; do
       SSH_USER=$OPTARG ;;
     s | ssm)
       SSM=1 ;;
+    scp-local)
+      needs_arg
+      SCP_LOCAL=$OPTARG ;;
+    scp-remote)
+      needs_arg
+      SCP_REMOTE=$OPTARG ;;
     v | verbose)
       set -x
       SSH_OPTS="${SSH_OPTS} -v"
@@ -136,5 +146,10 @@ fi
 verbose "Sending public key ${PUBLIC_KEY}..."
 aws ec2-instance-connect send-ssh-public-key --region ${REGION} --instance-id ${INSTANCE_ID} --availability-zone ${AZ} --instance-os-user $SSH_USER --ssh-public-key file://${PUBLIC_KEY} > /dev/null
 
-verbose "Connecting..."
-exec ssh ${SSH_OPTS} ${SSH_USER}@${IP} "$@"
+if [ "$SCP_LOCAL" != "" -a "$SCP_REMOTE" != "" ] ; then
+  verbose "Copying..."
+  scp ${SSH_OPTS} $SCP_LOCAL ${SSH_USER}@${IP}:${SCP_REMOTE} "$@"
+else
+  verbose "Connecting..."
+  exec ssh ${SSH_OPTS} ${SSH_USER}@${IP} "$@"
+fi
