@@ -132,8 +132,11 @@ fi
 
 verbose "Fetching metadata..."
 INSTANCE_META=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query='Reservations[].Instances[0]')
+if [ "${INSTANCE_META}" = "[]" ] ; then
+  echo "Failed to fetch metadata for ${INSTANCE_ID}.  Bad instance id?"
+  exit 2
+fi
 AZ=$(echo $INSTANCE_META | jq -r .[].Placement.AvailabilityZone)
-REGION=$(echo ${AZ} | sed 's,.$,,')
 
 if [ "$SSM" -eq 0 ] ; then
   IP=$(echo $INSTANCE_META | jq -r  .[].PublicIpAddress)
@@ -144,7 +147,7 @@ else
 fi
 
 verbose "Sending public key ${PUBLIC_KEY}..."
-aws ec2-instance-connect send-ssh-public-key --region ${REGION} --instance-id ${INSTANCE_ID} --availability-zone ${AZ} --instance-os-user $SSH_USER --ssh-public-key file://${PUBLIC_KEY} > /dev/null
+aws ec2-instance-connect send-ssh-public-key --instance-id ${INSTANCE_ID} --availability-zone ${AZ} --instance-os-user $SSH_USER --ssh-public-key file://${PUBLIC_KEY} > /dev/null
 
 if [ "$SCP_LOCAL" != "" -a "$SCP_REMOTE" != "" ] ; then
   verbose "Copying..."
