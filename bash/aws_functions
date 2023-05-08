@@ -1,6 +1,6 @@
 # AWS MFA / Temp credential helpers
 clear_sts_creds () {
-  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY AWS_SECRET_KEY AWS_SECURITY_TOKEN AWS_ACCOUNT_ID
   unset aws_access_key_id aws_secret_access_key aws_session_token
 }
 
