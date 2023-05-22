@@ -124,9 +124,11 @@ function ssh-ssm() {
   hostname=$1
   shift
   instance_id=$(instance_id_from_name ${hostname})
-  if [ "$instance_id" != "" ] ; then
-    ssh $instance_id $@
+  if [ "$instance_id" == "" ] ; then
+    echo "No instance id found for hostname ${hostname}"
+    return 2
   fi
+  ssh $instance_id $@
 }
 
 function retag-ecr-image() {
