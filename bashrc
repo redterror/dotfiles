@@ -19,9 +19,11 @@ shopt -s histappend
 HISTSIZE=10000
 HISTFILESIZE=50000
 
-export LC_ALL=en_US.UTF-8
+# LANG is the default, with overrides allowed via other LC_* env vars.  See:
+# https://superuser.com/a/392466
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
+export LC_TIME=C.UTF-8 # UTC 24-hour clock
 
 # use .localrc for settings specific to one system
 if [ -f ~/.localrc ]; then
