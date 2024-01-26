@@ -4,7 +4,7 @@ rebuild_sockinfo () {
 }
 
 # Setup the auth sock, for later user
-ssh-add -l > /dev/null 2>&1
+timeout 2 ssh-add -l > /dev/null 2>&1
 if [ $? -eq 0 ] ; then
   rebuild_sockinfo
 fi
