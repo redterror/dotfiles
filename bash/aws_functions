@@ -112,6 +112,11 @@ function ip_from_instance_id() {
   aws ec2 describe-instances --instance-ids $ids --filters "[{\"Name\":\"instance-state-name\", \"Values\":[\"running\"]}]" --query=${query} $@ | jq -r .[]
 }
 
+function instance_id_from_private_ip() {
+  ip=$1 ; shift
+  aws ec2 describe-instances --filters "[{\"Name\":\"private-ip-address\", \"Values\":[\"${ip}\"]}]" --query 'Reservations[*].Instances[*].InstanceId' --output text
+}
+
 function ssh-aws() {
   ssh $(ip_from_instance $@ | head -1)
 }
