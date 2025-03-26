@@ -1,5 +1,6 @@
 source ~/.bash/aliases
 source ~/.bash/completions
+source ~/.bash/k8s
 source ~/.bash/prompt
 source ~/.bash/aws_functions
 source ~/.bash/python

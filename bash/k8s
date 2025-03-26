@@ -1,0 +1,17 @@
+kubegetall () {
+  NAMESPACE=${1:?"No namespace specified"}
+  kubectl -n ${NAMESPACE} get $(kubectl api-resources --namespaced=true --no-headers -o name | egrep -v 'events|nodes' | paste -s -d, - ) --no-headers
+}
+
+# From https://pracucci.com/display-the-current-kubelet-context-in-the-bash-prompt.html
+#__kube_ps1()
+#{
+#  if [ -s ~/.kube/config ] ; then
+#    # Get current context
+#    CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
+#
+#    if [ -n "$CONTEXT" ]; then
+#      echo "(k8s: ${CONTEXT})"
+#    fi
+#  fi
+#}

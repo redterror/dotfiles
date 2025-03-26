@@ -38,13 +38,31 @@ function variable_width_prompt {
   echo -n
 }
 
-# Append our history on every command + set the variable_width
-PROMPT_COMMAND="history -a;variable_width_prompt" export PROMPT_COMMAND
+# Real prompt stuff below here
+unset PROMPT_COMMAND
 
-export PS1='\[\e[35;40m\]\u\[\e[37;40m\]@\[\e[35;40m\]\h\[\e[37;40m\]:\[\e[36;40m\]$newPWD\[\e[37;40m\]$(__git_ps1 "(\[$(parse_git_dirty)\]%s\[\e[37;40m\])")\$ '
+if [ -d ~/dev/kube-ps1 ] ; then
+  # See: https://github.com/jonmosco/kube-ps1
+  # Also note that imported cluster contexts can be long.  Rename them via 'kubectl config rename-context OLD NEW'
+  KUBE_PS1_SYMBOL_ENABLE=false
+  KUBE_PS1_HIDE_IF_NOCONTEXT=true
+  source ~/dev/kube-ps1/kube-ps1.sh
+fi
+
+# Append our history on every command + set the variable_width
+PROMPT_COMMAND_VAR_WIDTH="history -a;variable_width_prompt"
+
+if [ "$PROMPT_COMMAND" != "" ] ; then
+  PROMPT_COMMAND="$PROMPT_COMMAND_VAR_WIDTH;$PROMPT_COMMAND"
+else
+  PROMPT_COMMAND="$PROMPT_COMMAND_VAR_WIDTH"
+fi
+export PROMPT_COMMAND
+
+export PS1='\[\e[35;40m\]\u\[\e[37;40m\]:\[\e[36;40m\]$newPWD\[\e[37;40m\]$(__git_ps1 "(\[$(parse_git_dirty)\]%s\[\e[37;40m\])")\$ '
 
 RVMPROMPT=`which rvm-prompt`
 if [ $? -eq 0 ] ; then
-  PS1="\[\e[31;40m\]\$($RVMPROMPT i v g s)\[\e[37;40m\] $PS1"
+  PS1="\[\e[31;40m\]\$($RVMPROMPT v g s)\$(kube_ps1)\[\e[37;40m\] $PS1"
   export PS1
 fi
