@@ -63,6 +63,10 @@ export PS1='\[\e[35;40m\]\u\[\e[37;40m\]:\[\e[36;40m\]$newPWD\[\e[37;40m\]$(__gi
 
 RVMPROMPT=`which rvm-prompt`
 if [ $? -eq 0 ] ; then
-  PS1="\[\e[31;40m\]\$($RVMPROMPT v g s)\$(kube_ps1)\[\e[37;40m\] $PS1"
+  if [[ $(type -t kube_ps1) == function ]] ; then
+    PS1="\[\e[31;40m\]\$($RVMPROMPT v g s)\$(kube_ps1)\[\e[37;40m\] $PS1"
+  else
+    PS1="\[\e[31;40m\]\$($RVMPROMPT v g s)\[\e[37;40m\] $PS1"
+  fi
   export PS1
 fi
