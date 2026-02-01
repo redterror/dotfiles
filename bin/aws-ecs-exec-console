@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -eo pipefail
+BINDIR=$(dirname $0)
+
+# Requirements:
+# - `jq` must be installed on both the client and server
+##
+
+# the ECS cluster in which we'll launch the console `default` or `staging`
+cluster="$1"
+
+# the name of the task definition to use when launching the console task
+taskDefinition="$2"
+
+cliContainerName="$3"
+overrides='{"containerOverrides": [{"name": "'${cliContainerName}'", "command": ["sleep", "86400"]}]}'
+
+netConfig="$4"
+if [ "$netConfig" != "" ] ; then
+  netConfig="--network-configuration ${netConfig}"
+fi
+
+echo '-> Starting task...'
+
+# run the new task using the ECS scheduler. By default, ECS will place the task on any instance
+# that has enough cpu/mem available. You can also specify placement constraints or a strategy here
+#
+# https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+#
+response=$(aws ecs run-task \
+  --launch-type FARGATE \
+  --cluster "$cluster" \
+  --task-definition "$taskDefinition" \
+  --overrides "$overrides" \
+  --started-by "user-console/$(whoami)" \
+  --enable-execute-command $netConfig
+)
+
+taskArn=$(echo "$response" | jq -r '.tasks [0] .taskArn')
+
+if [ "${taskArn}" = "null" ] ; then
+  echo "Unable to start task!"
+  echo ${response}
+  exit 1
+fi
+
+function stop_task () {
+  ERR_CODE=$1
+
+  if [ $ERR_CODE -ne 0 ] ; then
+    echo "-> Error caught running '$BASH_COMMAND' code: $ERR_CODE"
+  fi
+
+  # after we close the tty we'll stop the task so it doesn't sit around wasting resources
+  echo "-> Stopping task ${taskArn}..."
+  response=$(aws ecs stop-task \
+    --cluster "$cluster" \
+    --task "$taskArn" \
+    --reason 'user-console/stop')
+
+  echo "-> Task stopped"
+}
+trap 'stop_task $?' EXIT
+
+checkStatus() {
+  descTask=$(aws ecs describe-tasks --cluster ${cluster} --tasks ${taskArn})
+  taskStatus=$(echo $descTask | jq -r '.tasks[].lastStatus')
+  agentStatus=$(echo $descTask | jq -r '.tasks[].containers[0].managedAgents[0].lastStatus')
+
+}
+
+echo "-> Waiting for task ${taskArn} to be in the RUNNING state"
+
+checkStatus
+while [ "$taskStatus" == 'null' ] || [ "$taskStatus" != "RUNNING" ] || [ "$agentStatus" != "RUNNING" ]; do
+  if [ "$taskStatus" == "STOPPED" ] || [ "$agentStatus" == "STOPPED" ] ; then
+    echo -> "Task stopped, aborting"
+    exit 1
+  fi
+
+  checkStatus
+  sleep 5
+done
+
+echo "-> Task & Agent ready, attaching..."
+
+aws ecs execute-command --cluster ${cluster} --task ${taskArn} --container ${cliContainerName} --interactive --command /bin/bash
+
+# Pause for a moment and then exit, triggering the cleanup trap above automatiocally
+sleep 0.5
