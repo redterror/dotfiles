@@ -4,8 +4,7 @@ set -eo pipefail
 BINDIR=$(dirname $0)
 
 # Requirements:
-# - `jq` must be installed on both the client and server
-##
+# - `jq` must be installed on the client
 
 # the ECS cluster in which we'll launch the console `default` or `staging`
 cluster="$1"
