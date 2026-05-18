@@ -77,6 +77,35 @@ assume_role_mfa () {
   return 0
 }
 
+assume_role_by_name () {
+  ROLE_NAME=$1
+  ROLE_TTL=${2:-3600}
+  if [ "$ROLE_NAME" = "" ] ; then
+    echo "Usage: assume_role_by_name role-name"
+    return 2
+  fi
+
+  acct_id=$(aws sts get-caller-identity --output text --query 'Account')
+  role_arn="arn:aws:iam::${acct_id}:role/${ROLE_NAME}"
+  role_session="cli-assume-role-mfa"
+  ext_id=`whoami`@`hostname`
+  CREDS=$(aws sts assume-role --role-arn $role_arn --role-session-name $role_session \
+            --duration-seconds ${ROLE_TTL} \
+            --external-id "$ext_id" \
+            --output text --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]')
+
+  if [ $? -eq 0 ] ; then
+    AWS_ACCESS_KEY_ID=$(echo "$CREDS" | awk '{print $1}')
+    AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | awk '{print $2}')
+    AWS_SESSION_TOKEN=$(echo "$CREDS" | awk '{print $3}')
+    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+    echo "Token refreshed for role ${ROLE_NAME}"
+  fi
+  unset CREDS PROFILE_NAME
+
+  return 0
+}
+
 echo_aws_creds () {
   echo "export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
 }
